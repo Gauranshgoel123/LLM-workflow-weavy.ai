@@ -5,7 +5,7 @@ import ReactFlow, {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
-  Background,
+  Background, BackgroundVariant,
   Connection,
   Edge,
   EdgeChange,
@@ -102,7 +102,7 @@ function Toolbar({
           <Hand size={18} />
         </button>
 
-        <div className="w-[1px] h-6 bg-[#2a2c30]" />
+        <div className="w-px h-6 bg-[#2a2c30]" />
 
         {/* Undo */}
         <button
@@ -132,7 +132,7 @@ function Toolbar({
           <Redo2 size={18} />
         </button>
 
-        <div className="w-[1px] h-6 bg-[#2a2c30]" />
+        <div className="w-px h-6 bg-[#2a2c30]" />
 
         {/* Zoom dropdown */}
         <DropdownMenu>
@@ -267,8 +267,12 @@ function FlowInner() {
       if (sourceNode?.type === "textNode") stroke = "#a855f7"; // purple
       if (sourceNode?.type === "imageNode") stroke = "#22c55e"; // green
 
+      if (!connection.source || !connection.target) return;
+
       const newEdge: Edge = {
         ...connection,
+        source: connection.source,
+        target: connection.target,
         id: `e-${connection.source}-${connection.target}-${Date.now()}`,
         animated: true,
         style: {
@@ -325,7 +329,8 @@ function FlowInner() {
         onDrop={onDrop}
       >
         {/* Background */}
-        <Background variant="dots" gap={18} size={1} color="#2a2c30" />
+        <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#2a2c30" />
+
 
         {/* Minimap */}
         <MiniMap position="bottom-right" pannable zoomable />
