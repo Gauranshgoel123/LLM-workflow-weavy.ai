@@ -6,28 +6,18 @@ type NodeKind = "textNode" | "imageNode" | "llmNode";
 type FlowStore = {
   nodes: Node[];
   edges: Edge[];
-
-  addNodeAt: (type: string, position: { x: number; y: number }) => void;
-
-  setNodes: (updater: Node[] | ((prev: Node[]) => Node[])) => void;
-  setEdges: (updater: Edge[] | ((prev: Edge[]) => Edge[])) => void;
-
-  updateNodeData: (id: string, patch: Record<string, any>) => void;
+  addNodeAt: (type: NodeKind, position: { x: number; y: number }) => void;
+  setNodes: (nodes: Node[]) => void;
+  setEdges: (edges: Edge[]) => void;
+  updateNodeData: (id: string, patch: any) => void;
 };
 
 export const useFlowStore = create<FlowStore>((set, get) => ({
   nodes: [],
   edges: [],
 
-  setNodes: (updater) =>
-    set((state) => ({
-      nodes: typeof updater === "function" ? updater(state.nodes) : updater,
-    })),
-
-  setEdges: (updater) =>
-    set((state) => ({
-      edges: typeof updater === "function" ? updater(state.edges) : updater,
-    })),
+  setNodes: (nodes) => set({ nodes }),
+  setEdges: (edges) => set({ edges }),
 
   updateNodeData: (id, patch) => {
     set({
@@ -38,33 +28,27 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   },
 
   addNodeAt: (type, position) => {
-    // ✅ HARD FIX: normalize type coming from drag drop
-    let normalizedType: NodeKind;
+    const id = `${type}-${Date.now()}`;
 
-    if (type === "textNode" || type === "TextNode" || type === "text") {
-      normalizedType = "textNode";
-    } else if (type === "imageNode" || type === "ImageNode" || type === "image") {
-      normalizedType = "imageNode";
-    } else if (type === "llmNode" || type === "LLMNode" || type === "llm") {
-      normalizedType = "llmNode";
-    } else {
-      // fallback
-      normalizedType = "textNode";
+    const baseData: any = {};
+
+    if (type === "textNode") {
+      baseData.text = "";
     }
-
-    const id = `${normalizedType}-${Date.now()}`;
-
-    let data: any = {};
-    if (normalizedType === "textNode") data = { text: "" };
-    if (normalizedType === "imageNode") data = { image: "" };
-    if (normalizedType === "llmNode")
-      data = { modelName: "Gemini", status: "Ready" };
+    if (type === "imageNode") {
+      baseData.image = null;
+    }
+    if (type === "llmNode") {
+      baseData.modelName = "Gemini";
+      baseData.status = "Ready";
+      baseData.output = "";
+    }
 
     const newNode: Node = {
       id,
-      type: normalizedType, //MUST MATCH nodeTypes KEY
+      type,
       position,
-      data,
+      data: baseData,
     };
 
     set({ nodes: [...get().nodes, newNode] });

@@ -133,27 +133,3 @@
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
 }
-
-/* ✅ Allow clicking inside nodes (inputs/textarea) */
-.react-flow__node {
-  pointer-events: all !important;
-}
-
-/* ✅ Allow clicking inside node content */
-.react-flow__node * {
-  pointer-events: all !important;
-}
-
-/* ✅ Make sure pane doesn't block */
-.react-flow__pane {
-  pointer-events: all !important;
-}
-/* ✅ Bring nodes above everything */
-.react-flow__nodes {
-  z-index: 50 !important;
-  position: relative;
-}
-
-.react-flow__node {
-  z-index: 60 !important;
-}
