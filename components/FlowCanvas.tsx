@@ -55,7 +55,7 @@ function Toolbar({
     Math.round(getViewport().zoom * 100)
   );
 
-  // ✅ update zoom percent dynamically
+  // update zoom percent dynamically
   useEffect(() => {
     const id = setInterval(() => {
       const z = Math.round(getViewport().zoom * 100);
@@ -207,14 +207,14 @@ function FlowInner() {
   const undo = () => {};
   const redo = () => {};
 
-  // ✅ Custom nodeTypes
+  // Custom nodeTypes
   const nodeTypes = {
     textNode: TextNode,
     imageNode: ImageNode,
     llmNode: LLMNode,
   };
 
-  // ✅ attach handlers into node.data
+  // attach handlers into node.data
   const nodesWithHandlers: Node[] = nodes.map((n) => {
     if (n.type === "textNode") {
       return {
@@ -234,7 +234,7 @@ function FlowInner() {
           onRun: () => {
             updateNodeData(n.id, { status: "Running..." });
             setTimeout(() => {
-              updateNodeData(n.id, { status: "Done ✅ (mock)" });
+              updateNodeData(n.id, { status: "Done (mock)" });
             }, 1000);
           },
         },
@@ -258,7 +258,7 @@ function FlowInner() {
     [edges, setEdges]
   );
 
-  // ✅ Edge connect coloring logic
+  // Edge connect coloring logic
   const onConnect = useCallback(
     (connection: Connection) => {
       const sourceNode = nodes.find((n) => n.id === connection.source);
@@ -282,13 +282,13 @@ function FlowInner() {
     [nodes, edges, setEdges]
   );
 
-  // ✅ Allow drop
+  // Allow drop
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // ✅ Drop -> create node at cursor position
+  // Drop -> create node at cursor position
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
