@@ -10,7 +10,7 @@ export default function SidebarPanel({ collapsed }: { collapsed: boolean }) {
     <div className="h-full w-80 bg-[#141518] text-white p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="font-semibold text-lg">untitled</div>
+        <div className="font-semibold text-lg">File Name</div>
         <button className="text-gray-300 hover:text-white">⌄</button>
       </div>
 

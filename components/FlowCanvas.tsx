@@ -55,7 +55,7 @@ function Toolbar({
     Math.round(getViewport().zoom * 100)
   );
 
-  // ✅ update zoom percent dynamically
+  // ✅ dynamic zoom percent
   useEffect(() => {
     const id = setInterval(() => {
       const z = Math.round(getViewport().zoom * 100);
@@ -74,8 +74,8 @@ function Toolbar({
   };
 
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-2 rounded-2xl bg-[#16171a] border border-[#2a2c30] px-3 py-2 shadow-lg">
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+      <div className="flex items-center gap-2 rounded-2xl bg-[#16171a] border border-[#2a2c30] px-3 py-2 shadow-lg pointer-events-auto">
         {/* Select */}
         <button
           onClick={() => setMode("select")}
@@ -89,7 +89,7 @@ function Toolbar({
           <MousePointer2 size={18} />
         </button>
 
-        {/* Pan/Drag */}
+        {/* Pan */}
         <button
           onClick={() => setMode("pan")}
           className={`p-2 rounded-xl transition ${
@@ -189,13 +189,14 @@ function Toolbar({
 
 /* -------------------- Flow Inner -------------------- */
 function FlowInner() {
-  const reactFlowWrapper = useRef<HTMLDivElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const { screenToFlowPosition } = useReactFlow();
 
   const nodes = useFlowStore((s) => s.nodes);
   const edges = useFlowStore((s) => s.edges);
   const setNodes = useFlowStore((s) => s.setNodes);
   const setEdges = useFlowStore((s) => s.setEdges);
+
   const addNodeAt = useFlowStore((s) => s.addNodeAt);
   const updateNodeData = useFlowStore((s) => s.updateNodeData);
 
@@ -207,14 +208,14 @@ function FlowInner() {
   const undo = () => {};
   const redo = () => {};
 
-  // ✅ Custom nodeTypes
+  // ✅ Custom nodes mapping
   const nodeTypes = {
     textNode: TextNode,
     imageNode: ImageNode,
     llmNode: LLMNode,
   };
 
-  // ✅ attach handlers into node.data
+  // ✅ Attach handlers to nodes
   const nodesWithHandlers: Node[] = nodes.map((n) => {
     if (n.type === "textNode") {
       return {
@@ -226,6 +227,16 @@ function FlowInner() {
       };
     }
 
+    if (n.type === "imageNode") {
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          onUpload: (base64: string) => updateNodeData(n.id, { image: base64 }),
+        },
+      };
+    }
+
     if (n.type === "llmNode") {
       return {
         ...n,
@@ -233,8 +244,11 @@ function FlowInner() {
           ...n.data,
           onRun: () => {
             updateNodeData(n.id, { status: "Running..." });
+
             setTimeout(() => {
-              updateNodeData(n.id, { status: "Done ✅ (mock)" });
+              updateNodeData(n.id, {
+                status: "Done ✅ (mock)",
+              });
             }, 1000);
           },
         },
@@ -244,51 +258,48 @@ function FlowInner() {
     return n;
   });
 
+  // ✅ FIX: ReactFlow state updates MUST be functional updates
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes(applyNodeChanges(changes, nodes));
+      setNodes((prevNodes) => applyNodeChanges(changes, prevNodes));
     },
-    [nodes, setNodes]
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      setEdges(applyEdgeChanges(changes, edges));
+      setEdges((prevEdges) => applyEdgeChanges(changes, prevEdges));
     },
-    [edges, setEdges]
+    [setEdges]
   );
 
-  // ✅ Edge connect coloring logic
+  // Edge connect with color logic
   const onConnect = useCallback(
     (connection: Connection) => {
       const sourceNode = nodes.find((n) => n.id === connection.source);
 
-      let stroke = "#9ca3af"; // default gray
-      if (sourceNode?.type === "textNode") stroke = "#a855f7"; // purple
-      if (sourceNode?.type === "imageNode") stroke = "#22c55e"; // green
+      let stroke = "#9ca3af";
+      if (sourceNode?.type === "textNode") stroke = "#a855f7";
+      if (sourceNode?.type === "imageNode") stroke = "#22c55e";
 
       const newEdge: Edge = {
         ...connection,
         id: `e-${connection.source}-${connection.target}-${Date.now()}`,
         animated: true,
-        style: {
-          stroke,
-          strokeWidth: 2,
-        },
+        style: { stroke, strokeWidth: 2 },
       };
 
-      setEdges(addEdge(newEdge, edges));
+      setEdges((prevEdges) => addEdge(newEdge, prevEdges));
     },
-    [nodes, edges, setEdges]
+    [nodes, setEdges]
   );
 
-  // ✅ Allow drop
+  // ✅ Drag-drop from sidebar into canvas (node creation)
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // ✅ Drop -> create node at cursor position
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -305,32 +316,32 @@ function FlowInner() {
     },
     [addNodeAt, screenToFlowPosition]
   );
+useEffect(() => {
+  console.log("NODES IN STORE:", nodes);
+}, [nodes]);
 
   return (
-    <div
-      ref={reactFlowWrapper}
-      className="h-full w-full bg-[#0f1012] relative"
-    >
+    <div ref={wrapperRef} className="h-full w-full bg-[#0f1012] relative">
       <ReactFlow
         nodes={nodesWithHandlers}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
         panOnDrag={mode === "pan"}
-        selectionOnDrag={mode === "select"}
+        selectionOnDrag={false}
+        noDragClassName="nodrag"
+        noPanClassName="nopan"
+        nodesFocusable={false}
+        edgesFocusable={false}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDragOver={onDragOver}
-        onDrop={onDrop}
+        onDrop={onDrop}      
       >
-        {/* Background */}
         <Background variant="dots" gap={18} size={1} color="#2a2c30" />
-
-        {/* Minimap */}
         <MiniMap position="bottom-right" pannable zoomable />
 
-        {/* Toolbar */}
         <Toolbar
           mode={mode}
           setMode={setMode}
@@ -344,7 +355,7 @@ function FlowInner() {
   );
 }
 
-/* -------------------- Export -------------------- */
+/* -------------------- Export FlowCanvas -------------------- */
 export default function FlowCanvas() {
   return (
     <ReactFlowProvider>

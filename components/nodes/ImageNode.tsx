@@ -1,8 +1,34 @@
 "use client";
 
 import { Handle, Position } from "reactflow";
+import { Upload } from "lucide-react";
+import { useRef } from "react";
 
 export default function ImageNode({ data }: any) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      data.onUpload?.(base64);
+    };
+    reader.readAsDataURL(file);
+
+    // ✅ allow re-uploading same file again
+    e.target.value = "";
+  };
+
+
   return (
     <div className="w-[320px] rounded-xl bg-[#16171a] border border-[#2a2c30] text-white shadow-lg">
       {/* Header */}
@@ -13,20 +39,50 @@ export default function ImageNode({ data }: any) {
 
       {/* Body */}
       <div className="p-3">
-        <div className="w-full aspect-[4/3] bg-[#0f1012] border border-[#2a2c30] rounded-lg overflow-hidden flex items-center justify-center">
+        {/* Upload Area */}
+        <div
+          onClick={openFilePicker}
+          className="w-full h-[260px] rounded-lg border border-[#2a2c30] overflow-hidden cursor-pointer
+          flex items-center justify-center relative bg-[#0f1012]"
+          style={{
+            backgroundImage:
+              "linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%, rgba(255,255,255,0.06)), linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%, rgba(255,255,255,0.06))",
+            backgroundPosition: "0 0, 12px 12px",
+            backgroundSize: "24px 24px",
+          }}
+        >
+          {/* Hidden input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
+          {/* Preview */}
           {data.image ? (
-            <img src={data.image} alt="uploaded" className="w-full h-full object-cover" />
+            <img
+              src={data.image}
+              alt="uploaded"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           ) : (
-            <div className="text-gray-500 text-sm">Drop / Upload Image</div>
+            <div className="flex flex-col items-center gap-2 text-gray-300">
+              <Upload size={22} />
+              <div className="text-sm font-medium">
+                Click to upload
+              </div>
+            </div>
           )}
         </div>
 
-        <button
-          className="mt-3 text-xs text-gray-400 hover:text-white"
-          onClick={() => data.onAddMore?.()}
-        >
-          + Add more images
-        </button>
+        {/* Optional small text */}
+        {!data.image && (
+          <div className="mt-2 text-xs text-gray-500">
+            Upload an image from your device
+          </div>
+        )}
       </div>
 
       {/* Output handle (green) */}
@@ -35,7 +91,7 @@ export default function ImageNode({ data }: any) {
         position={Position.Right}
         id="image"
         style={{
-          background: "#22c55e", // green
+          background: "#22c55e",
           width: 10,
           height: 10,
         }}
